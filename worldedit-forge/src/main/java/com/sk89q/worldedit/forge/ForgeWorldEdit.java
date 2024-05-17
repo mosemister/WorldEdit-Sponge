@@ -64,6 +64,7 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ExtensionPoint;
 import net.minecraftforge.fml.ModContainer;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -85,6 +86,7 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.sk89q.worldedit.forge.ForgeAdapter.adaptPlayer;
@@ -122,7 +124,7 @@ public class ForgeWorldEdit {
 
         // Mark WorldEdit as only required on the server
         ModLoadingContext.get().registerExtensionPoint(
-            ExtensionPoint.DISPLAYTEST,
+                ExtensionPoint.DISPLAYTEST,
             () -> Pair.of(
                 () -> FMLNetworkConstants.IGNORESERVERONLY,
                 (a, b) -> true
@@ -158,11 +160,14 @@ public class ForgeWorldEdit {
 
         config = new ForgeConfiguration(this);
 
-        //  TODO      if (ModList.get().isLoaded("sponge")) {
-        //            this.provider = new ForgePermissionsProvider.SpongePermissionsProvider();
-        //        } else {
-        this.provider = new ForgePermissionsProvider.VanillaPermissionsProvider(platform);
-        //        }
+        if (ModList.get().isLoaded("spongeforge")) {
+            WorldEdit.logger.info("Using Sponge permissions");
+            this.provider = new ForgePermissionsProvider.SpongePermissionsProvider();
+        } else {
+            WorldEdit.logger.info("Using Forge permissions");
+            WorldEdit.logger.error(ModList.get().getModFiles().stream().flatMap(info -> info.getMods().stream()).map(info -> info.getModId()).collect(Collectors.joining(", ")));
+            this.provider = new ForgePermissionsProvider.VanillaPermissionsProvider(platform);
+        }
     }
 
     private void setupRegistries(MinecraftServer server) {
@@ -216,12 +221,12 @@ public class ForgeWorldEdit {
         }
 
         List<Command> commands = manager.getPlatformCommandManager().getCommandManager()
-            .getAllCommands().collect(toList());
+                .getAllCommands().collect(toList());
         for (Command command : commands) {
             CommandWrapper.register(event.getDispatcher(), command);
             Set<String> perms = command.getCondition().as(PermissionCondition.class)
-                .map(PermissionCondition::getPermissions)
-                .orElseGet(Collections::emptySet);
+                    .map(PermissionCondition::getPermissions)
+                    .orElseGet(Collections::emptySet);
             if (!perms.isEmpty()) {
                 perms.forEach(getPermissionsProvider()::registerPermission);
             }
@@ -269,11 +274,11 @@ public class ForgeWorldEdit {
 
         boolean isLeftDeny = event instanceof PlayerInteractEvent.LeftClickBlock
                 && ((PlayerInteractEvent.LeftClickBlock) event)
-                        .getUseItem() == Event.Result.DENY;
+                .getUseItem() == Event.Result.DENY;
         boolean isRightDeny =
                 event instanceof PlayerInteractEvent.RightClickBlock
                         && ((PlayerInteractEvent.RightClickBlock) event)
-                                .getUseItem() == Event.Result.DENY;
+                        .getUseItem() == Event.Result.DENY;
         if (isLeftDeny || isRightDeny || event.getEntity().world.isRemote || event.getHand() == Hand.OFF_HAND) {
             return;
         }
@@ -327,8 +332,8 @@ public class ForgeWorldEdit {
         }
         event.setCanceled(true);
         WorldEdit.getInstance().getEventBus().post(new com.sk89q.worldedit.event.platform.CommandEvent(
-            adaptPlayer(parseResults.getContext().getSource().asPlayer()),
-            parseResults.getReader().getString()
+                adaptPlayer(parseResults.getContext().getSource().asPlayer()),
+                parseResults.getReader().getString()
         ));
     }
 

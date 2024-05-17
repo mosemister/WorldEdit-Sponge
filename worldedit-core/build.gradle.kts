@@ -28,8 +28,8 @@ configurations {
 
 dependencies {
     constraints {
-        "implementation"( "org.yaml:snakeyaml") {
-            version { strictly("1.26") }
+        "implementation"("org.yaml:snakeyaml") {
+            version { strictly("1.28") }
             because("Bukkit provides SnakeYaml")
         }
     }
@@ -77,8 +77,8 @@ tasks.named<AntlrTask>("generateGrammarSource").configure {
     val pkg = "com.sk89q.worldedit.antlr"
     outputDirectory = file("build/generated-src/antlr/main/${pkg.replace('.', '/')}")
     arguments = listOf(
-        "-visitor", "-package", pkg,
-        "-Xexact-output-dir"
+            "-visitor", "-package", pkg,
+            "-Xexact-output-dir"
     )
 }
 
